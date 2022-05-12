@@ -1,36 +1,40 @@
-package handlers
+package controllers
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"user-product-app/connection"
-	"user-product-app/structs"
+	"user-product-app/models"
+	"user-product-app/services"
 
 	"github.com/gorilla/mux"
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var limit interface{}
-	var offset interface{}
+	var limit int
+	var offset int
+	
+	keys, ok := r.URL.Query()["limit"]
+	if ok && len(keys[0]) >= 1 {
+		limit, _ = strconv.Atoi(keys[0])
+	}
 
-	limit = vars["limit"]
-	offset = vars["offset"]
+	keys, ok = r.URL.Query()["offset"]
+	if ok && len(keys[0]) >= 1 {
+		offset, _ = strconv.Atoi(keys[0])
+	}
 
-	if limit == ""  {
+	if limit == 0 {
 		limit = 10
 	}
 
-	if offset == "" {
-		offset = 0
-	}
-
-	db_user_product := []structs.Users{}
+	db_user_product := []models.User{}
 
 	connection.DB.Limit(limit).Offset(offset).Find(&db_user_product)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "User has successfully retrieve"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully retrieved"}
 	resuts, err := json.Marshal(res)
 
 	if err != nil {
@@ -46,10 +50,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
 
-	db_user_product := structs.Users{}
+	db_user_product := models.User{}
 	connection.DB.First(&db_user_product, user_id)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "User has found"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has found"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -64,11 +68,11 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product structs.Users
+	var db_user_product models.User
 	json.Unmarshal(payloads, &db_user_product)
 	connection.DB.Create(&db_user_product)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "User has successfully created"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully created"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -85,13 +89,16 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user_id := vars["id"]
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product structs.Users
+	var db_user_product models.User
 	connection.DB.First(&db_user_product, user_id)
 
 	json.Unmarshal(payloads, &db_user_product)
 	connection.DB.Model(&db_user_product).Update(db_user_product)
+	if !db_user_product.Status {
+		connection.DB.Model(&db_user_product).Update(map[string]interface{}{"status": false})
+	}
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -107,11 +114,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
 
-	var db_user_product structs.Users
+	var db_user_product models.User
 	connection.DB.First(&db_user_product, user_id)
 	connection.DB.Delete(&db_user_product)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "User has successfully deleted"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully deleted"}
 
 	result, err := json.Marshal(res)
 	if err != nil {

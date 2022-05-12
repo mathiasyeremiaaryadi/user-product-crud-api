@@ -1,36 +1,40 @@
-package handlers
+package controllers
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"user-product-app/connection"
-	"user-product-app/structs"
+	"user-product-app/models"
+	"user-product-app/services"
 
 	"github.com/gorilla/mux"
 )
 
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var limit interface{}
-	var offset interface{}
+	var limit int
+	var offset int
+	
+	keys, ok := r.URL.Query()["limit"]
+	if ok && len(keys[0]) >= 1 {
+		limit, _ = strconv.Atoi(keys[0])
+	}
 
-	limit = vars["limit"]
-	offset = vars["offset"]
+	keys, ok = r.URL.Query()["offset"]
+	if ok && len(keys[0]) >= 1 {
+		offset, _ = strconv.Atoi(keys[0])
+	}
 
-	if limit == ""  {
+	if limit == 0 {
 		limit = 10
 	}
 
-	if offset == "" {
-		offset = 0
-	}
-
-	db_user_product := []structs.Products{}
+	db_user_product := []models.Product{}
 
 	connection.DB.Limit(limit).Offset(offset).Find(&db_user_product)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "Products has successfully retrieve"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Products has successfully retrieved"}
 	resuts, err := json.Marshal(res)
 
 	if err != nil {
@@ -46,10 +50,10 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id := vars["id"]
 
-	db_user_product := structs.Products{}
+	db_user_product := models.Product{}
 	connection.DB.First(&db_user_product, product_id)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "Product has found"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Product has found"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -64,11 +68,11 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 func CreateProduct(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product structs.Products
+	var db_user_product models.Product
 	json.Unmarshal(payloads, &db_user_product)
 	connection.DB.Create(&db_user_product)
 
-	res := structs.Result{Code: 200, Data: db_user_product, Message: "Product has successfully created"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Product has successfully created"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -85,14 +89,16 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	product_id := vars["id"]
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product structs.Products
+	var db_user_product models.Product
 	connection.DB.First(&db_user_product, product_id)
 
 	json.Unmarshal(payloads, &db_user_product)
 	connection.DB.Model(&db_user_product).Updates(db_user_product)
+	if !db_user_product.Status {
+		connection.DB.Model(&db_user_product).Update(map[string]interface{}{"status": false})
+	}
 
-	var data map[string]interface{}
-	res := structs.Result{Code: 200, Data: data, Message: "User has successfully updated"}
+	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -108,12 +114,12 @@ func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id := vars["id"]
 
-	var db_user_product structs.Products
+	var db_user_product models.Product
 	connection.DB.First(&db_user_product, product_id)
 	connection.DB.Delete(&db_user_product)
 
 	var data map[string]interface{}
-	res := structs.Result{Code: 200, Data: data, Message: "Product has successfully updated"}
+	res := services.JSONService{Code: 200, Data: data, Message: "Product has successfully updated"}
 
 	result, err := json.Marshal(res)
 	if err != nil {

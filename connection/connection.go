@@ -10,14 +10,14 @@ import (
 
 var (
 	DB	*gorm.DB
-	Err error
+	err error
 )
 
 func Connect() {
-	DB, Err = gorm.Open("mysql", "root@tcp(127.0.0.1:3306)/db_user_product")
+	DB, err = gorm.Open("mysql", "root@tcp(127.0.0.1:3306)/db_user_product")
 
-	if Err != nil {
-		log.Println("Connection failed", Err)
+	if err != nil {
+		log.Println("Connection failed", err)
 	} else {
 		log.Println("Server up and running")
 	}
