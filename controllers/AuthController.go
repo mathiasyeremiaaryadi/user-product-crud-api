@@ -20,7 +20,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(payloads, &user_model)
 	input_pass := user_model.Password
 	
-	connection.DB.Where("email=?", &user_model.Email).Find(&user_model)
+	connection.DB.Select("username", "email", "phone", "role", "status").Where("email=?", &user_model.Email).Find(&user_model)
 	err := bcrypt.CompareHashAndPassword([]byte(user_model.Password), []byte(input_pass))
 
 	if err != nil || user_model.ID == 0 {
