@@ -7,12 +7,12 @@ import (
 
 type User struct {
 	ID       uint   `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Role     string `json:"role"`
-	Status   bool   `json:"status"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required,alpha"`
+	Email    string `json:"email" validate:"required,email"`
+	Phone    string `json:"phone" validate:"numeric"`
+	Role     string `json:"role" validate:"required,alpha"`
+	Status   bool   `json:"status" validate:"required,boolean"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error)  {

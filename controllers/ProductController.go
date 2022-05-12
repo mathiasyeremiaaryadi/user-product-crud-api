@@ -13,6 +13,7 @@ import (
 )
 
 func GetProducts(w http.ResponseWriter, r *http.Request) {
+	product_model := []models.Product{}
 	var limit int
 	var offset int
 	
@@ -30,16 +31,9 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 
-	db_user_product := []models.Product{}
-
-	connection.DB.Limit(limit).Offset(offset).Find(&db_user_product)
-
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Products has successfully retrieved"}
-	resuts, err := json.Marshal(res)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	connection.DB.Limit(limit).Offset(offset).Find(&product_model)
+	res := services.JSONService{Code: 200, Data: product_model, Message: "Products has successfully retrieved"}
+	resuts, _ := json.Marshal(res)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -49,38 +43,35 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 func GetProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id := vars["id"]
+	product_model := models.Product{}
+	var res services.JSONService
 
-	db_user_product := models.Product{}
-	connection.DB.First(&db_user_product, product_id)
-
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Product has found"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := connection.DB.First(&product_model, product_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "Product not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		res = services.JSONService{Code: 200, Data: product_model, Message: "Product has found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }
 
 func CreateProduct(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
+	var product_model models.Product
 
-	var db_user_product models.Product
-	json.Unmarshal(payloads, &db_user_product)
-	connection.DB.Create(&db_user_product)
+	json.Unmarshal(payloads, &product_model)
+	connection.DB.Create(&product_model)
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "Product has successfully created"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	res := services.JSONService{Code: 201, Data: nil, Message: "Product has successfully created"}
+	result, _ := json.Marshal(res)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
 }
 
@@ -88,42 +79,42 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id := vars["id"]
 	payloads, _ := ioutil.ReadAll(r.Body)
+	var res services.JSONService
+	var product_model models.Product
 
-	var db_user_product models.Product
-	connection.DB.First(&db_user_product, product_id)
-
-	json.Unmarshal(payloads, &db_user_product)
-	connection.DB.Save(&db_user_product)
-
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err:= connection.DB.First(&product_model, product_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "Product not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		json.Unmarshal(payloads, &product_model)
+		connection.DB.Save(&product_model)
+		res = services.JSONService{Code: 201, Data: nil, Message: "Product has successfully updated"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }
 
 func DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	product_id := vars["id"]
+	var res services.JSONService
+	var product_model models.Product
 
-	var db_user_product models.Product
-	connection.DB.First(&db_user_product, product_id)
-	connection.DB.Delete(&db_user_product)
-
-	var data map[string]interface{}
-	res := services.JSONService{Code: 200, Data: data, Message: "Product has successfully updated"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := connection.DB.First(&product_model, product_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "Product not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		connection.DB.Delete(&product_model)
+		res = services.JSONService{Code: 200, Data: nil, Message: "Product has successfully deleted"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }

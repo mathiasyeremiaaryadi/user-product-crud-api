@@ -13,6 +13,7 @@ import (
 )
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
+	user_model := []models.User{}
 	var limit int
 	var offset int
 	
@@ -30,16 +31,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 
-	user_model := []models.User{}
-
 	connection.DB.Limit(limit).Offset(offset).Find(&user_model)
-
 	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully retrieved"}
-	resuts, err := json.Marshal(res)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	resuts, _ := json.Marshal(res)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -49,39 +43,35 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
-
 	user_model := models.User{}
-	connection.DB.First(&user_model, user_id)
+	var res services.JSONService
 
-	res := services.JSONService{Code: 200, Data: user_model, Message: "User has found"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := connection.DB.First(&user_model, user_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "User not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		res = services.JSONService{Code: 200, Data: user_model, Message: "User has found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
-
 	var user_model models.User
 
 	json.Unmarshal(payloads, &user_model)
 	connection.DB.Create(&user_model)
 
-	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully created"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	res := services.JSONService{Code: 201, Data: nil, Message: "User has successfully created"}
+	result, _ := json.Marshal(res)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	w.Write(result)
 }
 
@@ -89,41 +79,42 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
 	payloads, _ := ioutil.ReadAll(r.Body)
+	var res services.JSONService
 
 	var user_model models.User
-	connection.DB.First(&user_model, user_id)
-
-	json.Unmarshal(payloads, &user_model)
-	connection.DB.Save(&user_model)
-
-	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully updated"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := connection.DB.First(&user_model, user_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "User not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		json.Unmarshal(payloads, &user_model)
+		connection.DB.Save(&user_model)
+		res = services.JSONService{Code: 201, Data: nil, Message: "User has successfully updated"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
-
 	var user_model models.User
-	connection.DB.First(&user_model, user_id)
-	connection.DB.Delete(&user_model)
+	var res services.JSONService
 
-	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully deleted"}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := connection.DB.First(&user_model, user_id); err.Error != nil {
+		res = services.JSONService{Code: 404, Data: nil, Message: "User not found"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+	} else {
+		connection.DB.Delete(&user_model)
+		res = services.JSONService{Code: 200, Data: nil, Message: "User has successfully deleted"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	
+	result, _ := json.Marshal(res)
 	w.Write(result)
 }
