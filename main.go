@@ -2,10 +2,10 @@ package main
 
 import (
 	"user-product-app/connection"
-	"user-product-app/handlers"
+	"user-product-app/routes"
 )
 
 func main() {
 	connection.Connect()
-	handlers.HandleReq()
+	routes.APIRoute()
 }

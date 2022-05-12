@@ -93,10 +93,7 @@ func UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	connection.DB.First(&db_user_product, product_id)
 
 	json.Unmarshal(payloads, &db_user_product)
-	connection.DB.Model(&db_user_product).Updates(db_user_product)
-	if !db_user_product.Status {
-		connection.DB.Model(&db_user_product).Update(map[string]interface{}{"status": false})
-	}
+	connection.DB.Save(&db_user_product)
 
 	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
 

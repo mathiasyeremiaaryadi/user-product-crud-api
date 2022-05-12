@@ -30,11 +30,11 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		limit = 10
 	}
 
-	db_user_product := []models.User{}
+	user_model := []models.User{}
 
-	connection.DB.Limit(limit).Offset(offset).Find(&db_user_product)
+	connection.DB.Limit(limit).Offset(offset).Find(&user_model)
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully retrieved"}
+	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully retrieved"}
 	resuts, err := json.Marshal(res)
 
 	if err != nil {
@@ -50,10 +50,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
 
-	db_user_product := models.User{}
-	connection.DB.First(&db_user_product, user_id)
+	user_model := models.User{}
+	connection.DB.First(&user_model, user_id)
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has found"}
+	res := services.JSONService{Code: 200, Data: user_model, Message: "User has found"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -68,11 +68,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product models.User
-	json.Unmarshal(payloads, &db_user_product)
-	connection.DB.Create(&db_user_product)
+	var user_model models.User
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully created"}
+	json.Unmarshal(payloads, &user_model)
+	connection.DB.Create(&user_model)
+
+	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully created"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -89,16 +90,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	user_id := vars["id"]
 	payloads, _ := ioutil.ReadAll(r.Body)
 
-	var db_user_product models.User
-	connection.DB.First(&db_user_product, user_id)
+	var user_model models.User
+	connection.DB.First(&user_model, user_id)
 
-	json.Unmarshal(payloads, &db_user_product)
-	connection.DB.Model(&db_user_product).Update(db_user_product)
-	if !db_user_product.Status {
-		connection.DB.Model(&db_user_product).Update(map[string]interface{}{"status": false})
-	}
+	json.Unmarshal(payloads, &user_model)
+	connection.DB.Save(&user_model)
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully updated"}
+	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully updated"}
 
 	result, err := json.Marshal(res)
 	if err != nil {
@@ -114,11 +112,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	user_id := vars["id"]
 
-	var db_user_product models.User
-	connection.DB.First(&db_user_product, user_id)
-	connection.DB.Delete(&db_user_product)
+	var user_model models.User
+	connection.DB.First(&user_model, user_id)
+	connection.DB.Delete(&user_model)
 
-	res := services.JSONService{Code: 200, Data: db_user_product, Message: "User has successfully deleted"}
+	res := services.JSONService{Code: 200, Data: user_model, Message: "User has successfully deleted"}
 
 	result, err := json.Marshal(res)
 	if err != nil {

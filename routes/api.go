@@ -8,10 +8,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func HandleReq() {
+func APIRoute() {
 	log.Println("Start development server localhost:8000")
 
 	router := mux.NewRouter().StrictSlash(true)
+
+	router.HandleFunc("/login", controllers.Login).Methods("POST")
 
 	router.HandleFunc("/users", controllers.GetUsers).Methods("GET")
 	router.HandleFunc("/users/{id}", controllers.GetUser).Methods("GET")
